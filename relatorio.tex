@@ -1,0 +1,65 @@
+\documentclass[conference]{IEEEtran} % Classe padrão para conferências SBC
+
+\usepackage[utf8]{inputenc} % Codificação de caracteres
+\usepackage[brazil]{babel} % Idioma em português
+\usepackage{amsmath} % Pacote para fórmulas matemáticas
+\usepackage{graphicx} % Pacote para inserir imagens
+
+\title{Jogo da velha por sockets TCP/IP} % Título do projeto
+\author{\IEEEauthorblockN{Guilherme Augusto de Oliveira Soares} \\
+\IEEEauthorblockA{Universidade Federal do Mato Grosso do Sul} \\
+\{g.augusto@ufms.br\}} % Coloque o seu nome, sua instituição e e-mail
+
+\begin{document}
+
+\maketitle % Gera o título e os autores
+
+\begin{abstract}
+Este relatório descreve o desenvolvimento de um jogo da velha (Tic-Tac-Toe) utilizando sockets TCP/IP, com o objetivo de permitir que dois jogadores interajam em rede.
+\end{abstract}
+
+\section{Introdução}
+
+ Um jogo da velha implementado em Python onde oferece uma experiência de jogo no console, onde os jogadores fazem suas jogadas em um tabuleiro 3x3. A comunicação entre os jogadores é realizada via sockets, permitindo que um servidor gerencie a partida e dois clientes participem de forma independente. O projeto também oferece funcionalidades como exibição do tabuleiro, verificação de vitórias e reinício do jogo, além de validação de movimentos inválidos. Este trabalho explora o uso de redes para criar uma aplicação simples, porém eficaz, utilizando programação orientada a sockets.
+
+\section{Como instalar e rodar o projeto}
+
+Para instalar e rodar o projeto, siga os seguintes passos:
+
+\begin{enumerate}
+    \item Clone o repositório do projeto:
+    \begin{verbatim}
+    git clone https://github.com/guisoaresdev/tcp-tictactoe-py
+    \end{verbatim}
+    
+    \item Acesse o diretório do projeto:
+    \begin{verbatim}
+    cd tcp-tictactoe-py
+    \end{verbatim}
+    
+    \item Para rodar o servidor:
+    \begin{verbatim}
+    python host.py
+    \end{verbatim}
+
+    \item Para rodar os clientes (dois terminais):
+    \begin{verbatim}
+    python client.py
+    \end{verbatim}
+\end{enumerate}
+\section{Funcionalidades}
+
+O sistema oferece as seguintes funcionalidades principais:
+
+\begin{itemize}
+    \item \textbf{Funcionalidade 1}: Exibir o tabuleiro quando os dois jogadores estão conectados.
+    \item \textbf{Funcionalidade 2}: Quando um jogador ganhar, questiona se eles desejam uma revanche.
+    \item \textbf{Funcionalidade 3}: Quando um jogador insere uma posicão inválida, é requisitado um novo
+ movimento.
+\end{itemize}
+
+\begin{thebibliography}{1}
+\bibitem{TicTacToe Python Game} GrantWilliams99, TicTacToe, 2021, https://github.com/GrantWilliams99/TicTacToe. 
+\end{thebibliography}
+
+\end{document}
