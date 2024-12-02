@@ -29,7 +29,6 @@ while True:
             client_game.draw_grid()
 
         elif isinstance(message, str):
-            # Lógica do que o cliente faz ao receber mensagens
             if message == "Sua vez":
                 while True:
                     move = input("Sua jogada (exemplo: A1, B2): ")
@@ -44,16 +43,17 @@ while True:
                     else:
                         break  # Sai do loop se o movimento for válido
 
-            elif message in ["win", "lose", "draw"]:
+            if message in ["win", "lose", "draw"]:
                 print(f"Resultado: {message.capitalize()}!")
+                rematch = input("Deseja uma revanche? (Y/N): ").upper()
+                client_socket.sendall(pickle.dumps(rematch))
 
-            elif message == "rematch":
-                # Pergunta se o jogador quer revanche
+            if message == "rematch":
                 rematch = input("Deseja uma revanche? (Y/N): ").upper()
                 client_socket.sendall(pickle.dumps(rematch))
 
                 if rematch == "Y":
-                    print("Revanche iniciada!")
+                    print("Aguardando resposta do outro jogador...")
                     continue  # Continua o loop e reinicia o jogo
                 else:
                     print("Obrigado por jogar!")

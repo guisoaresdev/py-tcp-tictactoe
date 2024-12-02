@@ -57,13 +57,15 @@ while running:
         break
 
     if not game.is_valid_move(move):
-        current_conn.sendall(pickle.dumps("Movimento inválido. Use o formato A1, B2, etc..."))
+        current_conn.sendall(pickle.dumps("Movimento inválido!"))
         continue;
     valid_move = game.edit_square(move, players[current_player])
-    current_conn.sendall(pickle.dumps("Movimento inválido, tente novamente" if not valid_move else "OK"))
+    current_conn.sendall(pickle.dumps("Movimento inválido, tente novamente!" if not valid_move else "OK"))
 
-    if game.did_win(players[current_player]) or game.is_draw():
+    if game.did_win(players[current_player]):
         send_to_all(game.symbol_list)
+        connections[current_player].send(pickle.dumps("win"));
+        connections[1 - current_player].send(pickle.dumps("lose"));
         send_to_all("rematch")  # Send rematch message to both clients
 
         rematch_responses = []
@@ -76,7 +78,7 @@ while running:
             rematch_responses.append(response == "Y")
 
         if all(rematch_responses):
-            print("Revanche iniciada!")
+            print("Revanche iniciada!");
             game.restart()
             current_player = 0
             continue

@@ -56,7 +56,6 @@ class TicTacToe:
     def _convert_to_index(self, grid_coord):
         try:
             if len(grid_coord) == 2:
-                print(f"Coordenada recebida: {grid_coord}")
                 # Verifica se a coordenada está no formato "A1" ou "1A"
                 if grid_coord[0].isalpha() and grid_coord[1].isdigit():  # Formato "A1"
                     row = int(grid_coord[1]) - 1
@@ -69,9 +68,7 @@ class TicTacToe:
 
                 # Verifica se a coordenada está dentro dos limites (0-2 para linha e coluna)
                 if 0 <= row < 3 and 0 <= col < 3:
-                    print(f"Coluna: {col}, Linha: {row}")
                     index = row * 3 + col
-                    print(f"Índice calculado: {index}")
                     return index
                 else:
                     raise ValueError("Coordenadas fora do limite")
