@@ -1,120 +1,111 @@
 import socket
 import pickle
-import time
 from tic_tac_toe import TicTacToe
 
 HOST = '127.0.0.1'
 PORT = 12783
 
-# Configura o socket do servidor
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind((HOST, PORT))
 server_socket.listen(2)
 
-print("Aguardando conexões dos dois jogadores...")
+print("Aguardando jogadores...")
+connections = []
+addresses = []
+players = ['X', 'O']  # Lista de símbolos para os jogadores
 
-# Aceita as conexões dos dois jogadores
-client1_socket, client1_address = server_socket.accept()
-print(f"Jogador 1 conectado: {client1_address}")
-client2_socket, client2_address = server_socket.accept()
-print(f"Jogador 2 conectado: {client2_address}")
+while len(connections) < 2:
+    conn, addr = server_socket.accept()
+    connections.append(conn)
+    addresses.append(addr)
+    print(f"Jogador {len(connections)} conectado: {addr}")
+    conn.sendall(pickle.dumps(players[len(connections) - 1]))  # Envia o símbolo para o jogador
+    print(f"Jogador {len(connections)} atribuído ao símbolo: {players[len(connections) - 1]}")
 
-# Inicializa os jogos para os jogadores
-player1_game = TicTacToe("X")
-player2_game = TicTacToe("O")
+# Instanciar o jogo com o primeiro símbolo (jogador 1)
+game = TicTacToe(players[0])  # 'X' para o primeiro jogador
 
-def enviar_tabuleiro():
-    client1_socket.sendall(pickle.dumps(player1_game.symbol_list))
-    client2_socket.sendall(pickle.dumps(player1_game.symbol_list))
+current_player = 0
 
-def enviar_para_ambos(mensagem):
-    print(f"Enviando para ambos os clientes: {mensagem}")
-    client1_socket.sendall(pickle.dumps(mensagem))
-    client2_socket.sendall(pickle.dumps(mensagem))
+def send_to_all(message):
+    for conn in connections:
+        conn.sendall(pickle.dumps(message))
 
-rematch = True
-
-while rematch:
-    # Reinicia o jogo no início de uma nova partida
-    player1_game.restart()
-    player2_game.update_symbol_list(player1_game.symbol_list)
-    enviar_tabuleiro()
-    
-    game_over = False
-    turn = 0
-
-    while not game_over:
-        current_socket = client1_socket if turn == 0 else client2_socket
-        other_socket = client2_socket if turn == 0 else client1_socket
-        current_symbol = "X" if turn == 0 else "O"
-        current_game = player1_game if turn == 0 else player2_game
-
+def receive_input(conn):
+    while True:
         try:
-            current_socket.sendall(pickle.dumps("Sua vez"))
-        except Exception as e:
-            print(f"Erro ao enviar mensagem ao jogador: {e}")
-            game_over = True
-            break
+            data = pickle.loads(conn.recv(2048))
+            return data
+        except:
+            return None
 
-        while True:
-            try:
-                # Recebe o movimento do jogador
-                move = pickle.loads(current_socket.recv(2048))  # Aumenta o buffer de recebimento
+running = True
 
-                # Verifica se o movimento é válido
-                if not current_game.is_valid_move(move):
-                    current_socket.sendall(pickle.dumps("Movimento inválido, tente novamente"))
-                else:
-                    current_game.edit_square(move)
-                    break
-            except Exception as e:
-                print(f"Erro ao receber movimento do jogador: {e}")
-                game_over = True
-                break
+while running:
+    send_to_all(game.symbol_list)
 
-        if game_over:
-            break
+    current_conn = connections[current_player]
+    current_conn.sendall(pickle.dumps("Sua vez"))
 
-        # Atualiza o tabuleiro para ambos os jogadores
-        player1_game.update_symbol_list(current_game.symbol_list)
-        player2_game.update_symbol_list(current_game.symbol_list)
-        enviar_tabuleiro()
-
-        # Verifica se há um vencedor ou empate
-        if current_game.did_win(current_symbol):
-            try:
-                current_socket.sendall(pickle.dumps("win"))
-                other_socket.sendall(pickle.dumps("lose"))
-            except Exception as e:
-                print(f"Erro ao enviar mensagem de vitória/derrota: {e}")
-            game_over = True
-        elif current_game.is_draw():
-            enviar_para_ambos("draw")
-            game_over = True
-
-        turn = 1 - turn
-
-    time.sleep(1)
-
-    # Após o término do jogo, pergunta sobre revanche
-    enviar_para_ambos("rematch")
-    print("Perguntando sobre rematch...")  # Debug
-
-    try:
-        rematch_client1 = pickle.loads(client1_socket.recv(2048))  # Aumenta o buffer de recebimento
-        rematch_client2 = pickle.loads(client2_socket.recv(2048))
-
-        print(f"Respostas para rematch: Jogador 1 - {rematch_client1}, Jogador 2 - {rematch_client2}")
-
-        rematch = rematch_client1.upper() == "Y" and rematch_client2.upper() == "Y"
-    except EOFError:
-        print("Um dos clientes encerrou a conexão. Encerrando o servidor.")
-        break
-    except Exception as e:
-        print(f"Ocorreu um erro ao processar as respostas dos jogadores: {e}")
+    move = receive_input(current_conn)
+    if not move:
+        print(f"Jogador {current_player + 1} desconectado.")
+        running = False
         break
 
-print("Jogo encerrado.")
-client1_socket.close()
-client2_socket.close()
+    valid_move = game.edit_square(move, players[current_player])
+    current_conn.sendall(pickle.dumps("Movimento inválido, tente novamente" if not valid_move else "OK"))
+    
+    if game.did_win(players[current_player]):
+        send_to_all(game.symbol_list)
+        for i, conn in enumerate(connections):
+            if i == current_player:
+                conn.sendall(pickle.dumps("win"))
+            else:
+                conn.sendall(pickle.dumps("lose"))
+        send_to_all("rematch")
+
+        # Wait for both player responses before starting rematch
+        rematch_responses = []
+        for i in range(2):  # Loop twice for both clients
+            conn = connections[i]
+            response = receive_input(conn)
+            if response is None:
+                print(f"Jogador {i + 1} desconectado.")
+                running = False
+                break  # Stop the game loop if a player disconnects
+            rematch_responses.append(response == "Y")
+
+        if all(rematch_responses):
+            print("Revanche iniciada!")
+            game.reset_game()
+            current_player = 0
+            continue
+        else:
+            print("Partida encerrada.")
+            running = False
+            break
+
+    elif game.is_draw():
+        send_to_all(game.symbol_list)
+        send_to_all("draw")
+        send_to_all("rematch")
+
+        rematch_responses = []
+        for conn in connections:
+            response = receive_input(conn)
+            rematch_responses.append(response == "Y")
+
+        if all(rematch_responses):
+            print("Revanche iniciada!")
+            game.reset_game()
+            current_player = 0
+            continue
+        else:
+            print("Partida encerrada.")
+            running = False
+            break
+
+    current_player = 1 - current_player
+
 server_socket.close()
