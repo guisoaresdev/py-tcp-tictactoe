@@ -9,11 +9,10 @@ client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((HOST, PORT))
 print("Conectado ao servidor! Aguardando o início do jogo...")
 
-# Recebe o símbolo do jogador (X ou O) do servidor
 data = client_socket.recv(2048)
 player_symbol = pickle.loads(data)
 print(f"Recebido símbolo do servidor: {player_symbol}")
-client_game = TicTacToe(player_symbol)  # Inicializa o jogo com o símbolo recebido
+client_game = TicTacToe(player_symbol)
 
 while True:
     try:
@@ -24,7 +23,6 @@ while True:
         message = pickle.loads(data)
 
         if isinstance(message, list):
-            # Atualiza o tabuleiro se for uma lista de símbolos
             client_game.update_symbol_list(message)
             client_game.draw_grid()
 
@@ -41,7 +39,7 @@ while True:
                     if resposta == "Movimento inválido, tente novamente":
                         print(resposta)
                     else:
-                        break  # Sai do loop se o movimento for válido
+                        break
 
             if message in ["win", "lose", "draw"]:
                 print(f"Resultado: {message.capitalize()}!")
@@ -63,5 +61,4 @@ while True:
         print(f"Erro de conexão: {e}")
         break
 
-# Fecha a conexão do cliente quando o jogo terminar
 client_socket.close()

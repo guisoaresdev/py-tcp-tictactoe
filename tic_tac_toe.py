@@ -1,7 +1,4 @@
 class TicTacToe:
-    """
-    Classe que representa o jogo da velha.
-    """
     def __init__(self, player_symbol):
         self.symbol_list = [" "] * 9
         self.player_symbol = player_symbol
@@ -19,13 +16,11 @@ class TicTacToe:
 
     def is_valid_move(self, grid_coord):
         try:
-            # Normaliza para aceitar "B2" ou "2B"
             if grid_coord[0].isdigit():  # Se o primeiro caractere for número, inverter
                 row, col = int(grid_coord[0]), grid_coord[1].upper()
             else:
                 col, row = grid_coord[0].upper(), int(grid_coord[1])
 
-            # Valida a coordenada
             if 'A' <= col <= 'C' and 1 <= row <= 3:
                 index = (row - 1) * 3 + (ord(col) - ord('A'))
                 return self.symbol_list[index] == ' '
@@ -56,17 +51,15 @@ class TicTacToe:
     def _convert_to_index(self, grid_coord):
         try:
             if len(grid_coord) == 2:
-                # Verifica se a coordenada está no formato "A1" ou "1A"
-                if grid_coord[0].isalpha() and grid_coord[1].isdigit():  # Formato "A1"
+                if grid_coord[0].isalpha() and grid_coord[1].isdigit():
                     row = int(grid_coord[1]) - 1
                     col = ord(grid_coord[0].upper()) - ord('A')
-                elif grid_coord[1].isalpha() and grid_coord[0].isdigit():  # Formato "1A"
+                elif grid_coord[1].isalpha() and grid_coord[0].isdigit():
                     row = int(grid_coord[0]) - 1
                     col = ord(grid_coord[1].upper()) - ord('A')
                 else:
                     raise ValueError("Formato inválido")
 
-                # Verifica se a coordenada está dentro dos limites (0-2 para linha e coluna)
                 if 0 <= row < 3 and 0 <= col < 3:
                     index = row * 3 + col
                     return index

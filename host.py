@@ -12,7 +12,7 @@ server_socket.listen(2)
 print("Aguardando jogadores...")
 connections = []
 addresses = []
-players = ['X', 'O']  # Lista de símbolos para os jogadores
+players = ['X', 'O']
 
 while len(connections) < 2:
     conn, addr = server_socket.accept()
@@ -22,8 +22,7 @@ while len(connections) < 2:
     conn.sendall(pickle.dumps(players[len(connections) - 1]))  # Envia o símbolo para o jogador
     print(f"Jogador {len(connections)} atribuído ao símbolo: {players[len(connections) - 1]}")
 
-# Instanciar o jogo com o primeiro símbolo (jogador 1)
-game = TicTacToe(players[0])  # 'X' para o primeiro jogador
+game = TicTacToe(players[0])
 
 current_player = 0
 
@@ -66,7 +65,7 @@ while running:
         send_to_all(game.symbol_list)
         connections[current_player].send(pickle.dumps("win"));
         connections[1 - current_player].send(pickle.dumps("lose"));
-        send_to_all("rematch")  # Send rematch message to both clients
+        send_to_all("rematch")
 
         rematch_responses = []
         for conn in connections:
@@ -74,7 +73,7 @@ while running:
             if response is None:
                 print(f"Jogador {connections.index(conn) + 1} desconectado.")
                 running = False
-                break  # Stop the game loop if a player disconnects
+                break
             rematch_responses.append(response == "Y")
 
         if all(rematch_responses):
