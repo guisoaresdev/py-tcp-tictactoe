@@ -27,9 +27,11 @@ game = TicTacToe(players[0])  # 'X' para o primeiro jogador
 
 current_player = 0
 
+
 def send_to_all(message):
     for conn in connections:
         conn.sendall(pickle.dumps(message))
+
 
 def receive_input(conn):
     while True:
@@ -38,6 +40,7 @@ def receive_input(conn):
             return data
         except:
             return None
+
 
 running = True
 
@@ -53,9 +56,12 @@ while running:
         running = False
         break
 
+    if not game.is_valid_move(move):
+        current_conn.sendall(pickle.dumps("Movimento inválido. Use o formato A1, B2, etc..."))
+        continue;
     valid_move = game.edit_square(move, players[current_player])
     current_conn.sendall(pickle.dumps("Movimento inválido, tente novamente" if not valid_move else "OK"))
-    
+
     if game.did_win(players[current_player]) or game.is_draw():
         send_to_all(game.symbol_list)
         send_to_all("rematch")  # Send rematch message to both clients

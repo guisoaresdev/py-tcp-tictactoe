@@ -33,6 +33,9 @@ while True:
             if message == "Sua vez":
                 while True:
                     move = input("Sua jogada (exemplo: A1, B2): ")
+                    if not client_game.is_valid_move(move):
+                        print("Movimento inválido, tente novamente")
+                        continue
                     client_socket.sendall(pickle.dumps(move))
                     resposta = pickle.loads(client_socket.recv(2048))
 
