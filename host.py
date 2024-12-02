@@ -56,29 +56,22 @@ while running:
     valid_move = game.edit_square(move, players[current_player])
     current_conn.sendall(pickle.dumps("Movimento inválido, tente novamente" if not valid_move else "OK"))
     
-    if game.did_win(players[current_player]):
+    if game.did_win(players[current_player]) or game.is_draw():
         send_to_all(game.symbol_list)
-        for i, conn in enumerate(connections):
-            if i == current_player:
-                conn.sendall(pickle.dumps("win"))
-            else:
-                conn.sendall(pickle.dumps("lose"))
-        send_to_all("rematch")
+        send_to_all("rematch")  # Send rematch message to both clients
 
-        # Wait for both player responses before starting rematch
         rematch_responses = []
-        for i in range(2):  # Loop twice for both clients
-            conn = connections[i]
+        for conn in connections:
             response = receive_input(conn)
             if response is None:
-                print(f"Jogador {i + 1} desconectado.")
+                print(f"Jogador {connections.index(conn) + 1} desconectado.")
                 running = False
                 break  # Stop the game loop if a player disconnects
             rematch_responses.append(response == "Y")
 
         if all(rematch_responses):
             print("Revanche iniciada!")
-            game.reset_game()
+            game.restart()
             current_player = 0
             continue
         else:
@@ -98,7 +91,7 @@ while running:
 
         if all(rematch_responses):
             print("Revanche iniciada!")
-            game.reset_game()
+            game.restart()
             current_player = 0
             continue
         else:
