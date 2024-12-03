@@ -14,31 +14,42 @@ connections = []
 addresses = []
 players = ['X', 'O']
 
+
+def send_with_length(conn, message):
+    data = pickle.dumps(message)
+    length = len(data)
+    conn.sendall(length.to_bytes(4, byteorder='big') + data)
+
+
+def receive_with_length(conn):
+    length_data = conn.recv(4)
+    if not length_data:
+        return None
+    length = int.from_bytes(length_data, byteorder='big')
+    data = b""
+    while len(data) < length:
+        packet = conn.recv(length - len(data))
+        if not packet:
+            return None
+        data += packet
+    return pickle.loads(data)
+
+
 while len(connections) < 2:
     conn, addr = server_socket.accept()
     connections.append(conn)
     addresses.append(addr)
     print(f"Jogador {len(connections)} conectado: {addr}")
-    conn.sendall(pickle.dumps(players[len(connections) - 1]))  # Envia o símbolo para o jogador
+    send_with_length(conn, players[len(connections) - 1])
     print(f"Jogador {len(connections)} atribuído ao símbolo: {players[len(connections) - 1]}")
 
 game = TicTacToe(players[0])
-
 current_player = 0
 
 
 def send_to_all(message):
     for conn in connections:
-        conn.sendall(pickle.dumps(message))
-
-
-def receive_input(conn):
-    while True:
-        try:
-            data = pickle.loads(conn.recv(2048))
-            return data
-        except:
-            return None
+        send_with_length(conn, message)
 
 
 running = True
@@ -47,37 +58,33 @@ while running:
     send_to_all(game.symbol_list)
 
     current_conn = connections[current_player]
-    current_conn.sendall(pickle.dumps("Sua vez"))
+    send_with_length(current_conn, "Sua vez")
 
-    move = receive_input(current_conn)
+    move = receive_with_length(current_conn)
     if not move:
         print(f"Jogador {current_player + 1} desconectado.")
         running = False
         break
 
     if not game.is_valid_move(move):
-        current_conn.sendall(pickle.dumps("Movimento inválido!"))
-        continue;
+        send_with_length(current_conn, "Movimento inválido, tente novamente!")
+        continue
+
     valid_move = game.edit_square(move, players[current_player])
-    current_conn.sendall(pickle.dumps("Movimento inválido, tente novamente!" if not valid_move else "OK"))
+    if not valid_move:
+        send_with_length(current_conn, "Movimento inválido, tente novamente!")
+        continue
+    send_to_all(game.symbol_list)
 
     if game.did_win(players[current_player]):
         send_to_all(game.symbol_list)
-        connections[current_player].send(pickle.dumps("win"));
-        connections[1 - current_player].send(pickle.dumps("lose"));
+        send_with_length(current_conn, "win")
+        send_with_length(connections[1 - current_player], "lose")
         send_to_all("rematch")
 
-        rematch_responses = []
-        for conn in connections:
-            response = receive_input(conn)
-            if response is None:
-                print(f"Jogador {connections.index(conn) + 1} desconectado.")
-                running = False
-                break
-            rematch_responses.append(response == "Y")
-
+        rematch_responses = [receive_with_length(conn) == "Y" for conn in connections if conn]
         if all(rematch_responses):
-            print("Revanche iniciada!");
+            print("Revanche iniciada!")
             game.restart()
             current_player = 0
             continue
@@ -91,11 +98,7 @@ while running:
         send_to_all("draw")
         send_to_all("rematch")
 
-        rematch_responses = []
-        for conn in connections:
-            response = receive_input(conn)
-            rematch_responses.append(response == "Y")
-
+        rematch_responses = [receive_with_length(conn) == "Y" for conn in connections if conn]
         if all(rematch_responses):
             print("Revanche iniciada!")
             game.restart()
